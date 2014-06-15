@@ -3,7 +3,6 @@
 #include "yafl.h"
 
 
-
 lval* lval_add(lval* v, lval* x){
     v->count++;
     v->cell = realloc(v->cell, sizeof(lval*) * v->count);
@@ -18,11 +17,17 @@ lval* lval_num(long x){
     return v;
 }
 
-lval* lval_err(char* m){
+lval* lval_err(char* fmt, ...){
     lval* v = malloc(sizeof(lval));
     v->type = LVAL_ERR;
-    v->err = malloc(strlen(m) + 1);
-    strcpy(v->err, m);
+
+    va_list va;
+    va_start(va, fmt);
+
+    v->err = malloc(512);
+    vsnprintf(v->err, 511, fmt, va);
+    v->err = realloc(v->err, strlen(v->err) + 1);
+    va_end(va);
     return v;
 }
 
@@ -50,10 +55,26 @@ lval* lval_qexpr(void){
     return v;
 }
 
+lval* lval_lambda(lval* formals, lval* body){
+    lval* v = malloc(sizeof(lval));
+    v->type = LVAL_FUN;
+    v->builtin = NULL;
+    v->env = lenv_new();
+    v->formals = formals;
+    v->body = body;
+    return v;
+}
+
 void lval_del(lval* v){
     switch (v->type) {
     case LVAL_NUM: break;
-    case LVAL_FUN: break;
+    case LVAL_FUN:
+        if(!v->builtin){
+            lenv_del(v->env);
+            lval_del(v->formals);
+            lval_del(v->body);
+        }
+        break;
     case LVAL_ERR: free(v->err); break;
     case LVAL_SYM: free(v->sym); break;
 
@@ -75,7 +96,16 @@ lval* lval_copy(lval* v){
     x->type = v->type;
 
     switch(v->type){
-    case LVAL_FUN: x->fun = v->fun; break;
+    case LVAL_FUN:
+        if (v->builtin) {
+            x->builtin = v->builtin;
+        }else{
+            x->builtin = NULL;
+            x->env = lenv_copy(v->env);
+            x->formals = lval_copy(v->formals);
+            x->body = lval_copy(v->body);
+        }
+        break;
     case LVAL_NUM: x->num = v->num; break;
     case LVAL_ERR:
         x->err = malloc(strlen(v->err) + 1);
@@ -95,6 +125,31 @@ lval* lval_copy(lval* v){
         break;
     }
     return x;
+}
+
+int lval_eq(lval* x, lval* y){
+    if(x->type != y->type) {return 0;}
+
+    switch(x->type){
+    case LVAL_NUM: return (x->num == y->num);
+    case LVAL_ERR: return (strcmp(x->err, y->err) == 0);
+    case LVAL_SYM: return (strcmp(x->sym, y->sym) == 0);
+    case LVAL_FUN:
+        if(x->builtin || y->builtin){
+            return x->builtin == y->builtin;
+                }else{
+            return lval_eq(x->formals, y->formals) && lval_eq(x->body, y->body);
+        }
+    case LVAL_QEXPR:
+    case LVAL_SEXPR:
+        if(x->count != y->count) {return 0;}
+        for(int i = 0; i < x->count; i++){
+            if(!lval_eq(x->cell[i], y->cell[i])) { return 0;}
+        }
+        return 1;
+        break;
+    }
+    return 0;
 }
 
 
@@ -124,4 +179,65 @@ lval* lval_join(lval* x, lval* y){
 
     lval_del(y);
     return x;
+}
+
+lval* lval_call(lenv* e, lval* f, lval* a){
+
+    if(f->builtin) {
+        return f->builtin(e,a);
+    }
+
+    int given = a->count;
+    int total = f->formals->count;
+
+
+    while(a->count){
+        if(f->formals->count == 0){
+            lval_del(a); return lval_err("too many args. expected %i, got %i",
+                                         total, given);
+        }
+
+        lval* sym = lval_pop(f->formals, 0);
+
+        if(strcmp(sym->sym, "&") == 0){
+            if(f->formals->count != 1){
+                lval_del(a);
+                return lval_err("too many args after '&'.  only 1 allowed");
+            }
+
+            lval* nsym = lval_pop(f->formals, 0);
+            lenv_put(f->env, nsym, builtin_list(e, a));
+            lval_del(sym); lval_del(nsym);
+            break;
+        }
+
+        lval* val = lval_pop(a, 0);
+        lenv_put(f->env, sym, val);
+        lval_del(sym);
+        lval_del(val);
+    }
+
+    lval_del(a);
+
+    if(f->formals->count >0 &&
+       strcmp(f->formals->cell[0]->sym, "&") == 0){
+        if(f->formals->count != 2){
+            return lval_err("'&' should be followed by a single arg");
+        }
+
+        lval_del(lval_pop(f->formals, 0));
+
+        lval* sym = lval_pop(f->formals, 0);
+        lval* val = lval_qexpr();
+
+        lenv_put(f->env, sym, val);
+        lval_del(sym); lval_del(val);
+    }
+
+    if(f->formals->count == 0){
+        f->env->par = e;
+        return builtin_eval(f->env, lval_add(lval_sexpr(), lval_copy(f->body)));
+    }else{
+        return lval_copy(f);
+    }
 }

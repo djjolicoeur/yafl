@@ -52,7 +52,17 @@ void lval_expr_print(lval* v, char open, char close) {
 
 void lval_print(lval* v){
     switch (v->type) {
-    case LVAL_FUN:   printf("<function>");         break;
+    case LVAL_FUN:
+        if(v->builtin){
+            printf ("<function>");
+        }else{
+            printf("(\\ ");
+            lval_print(v->formals);
+            putchar(' ');
+            lval_print(v->body);
+            putchar(')');
+        }
+        break;
     case LVAL_NUM:   printf("%li", v->num);        break;
     case LVAL_ERR:   printf("Error: %s", v->err);  break;
     case LVAL_SYM:   printf("%s", v->sym);         break;
