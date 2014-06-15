@@ -17,6 +17,15 @@ lval* lval_num(long x){
     return v;
 }
 
+lval* lval_str(char* s){
+    lval* v = malloc(sizeof(lval));
+
+    v->type = LVAL_STR;
+    v->str = malloc(strlen(s) + 1);
+    strcpy(v->str, s);
+    return v;
+}
+
 lval* lval_err(char* fmt, ...){
     lval* v = malloc(sizeof(lval));
     v->type = LVAL_ERR;
@@ -77,7 +86,7 @@ void lval_del(lval* v){
         break;
     case LVAL_ERR: free(v->err); break;
     case LVAL_SYM: free(v->sym); break;
-
+    case LVAL_STR: free(v->str); break;
     case LVAL_QEXPR:
     case LVAL_SEXPR:
         for(int i = 0; i < v->count; i++){
@@ -107,6 +116,11 @@ lval* lval_copy(lval* v){
         }
         break;
     case LVAL_NUM: x->num = v->num; break;
+    case LVAL_STR:
+        x->str = malloc(strlen(v->str) +1);
+        strcpy(x->str, v->str);
+        break;
+
     case LVAL_ERR:
         x->err = malloc(strlen(v->err) + 1);
         strcpy(x->err, v->err);
@@ -134,6 +148,7 @@ int lval_eq(lval* x, lval* y){
     case LVAL_NUM: return (x->num == y->num);
     case LVAL_ERR: return (strcmp(x->err, y->err) == 0);
     case LVAL_SYM: return (strcmp(x->sym, y->sym) == 0);
+    case LVAL_STR: return (strcmp(x->str, y->str) == 0);
     case LVAL_FUN:
         if(x->builtin || y->builtin){
             return x->builtin == y->builtin;

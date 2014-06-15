@@ -11,6 +11,7 @@ char* ltype_name(int t){
     case LVAL_NUM: return "Number";
     case LVAL_ERR: return "Error";
     case LVAL_SYM: return "Symbol";
+    case LVAL_STR: return "String";
     case LVAL_SEXPR: return "S-Expression";
     case LVAL_QEXPR: return "Q-Expression";
     default: return "Unknown";
@@ -147,6 +148,58 @@ lval* builtin_join(lenv* e, lval* a){
 
     lval_del(a);
     return x;
+}
+
+lval* builtin_load(lenv* e, lval* a){
+    LASSERT_NUM("load", a, 1);
+    LASSERT_TYPE("load", a, 0, LVAL_STR);
+    mpc_result_t parsed;
+    if(mpc_parse_contents(a->cell[0]->str, Yafl, &parsed)){
+        lval* expr = lval_read(parsed.output);
+        mpc_ast_delete(parsed.output);
+
+        while(expr->count){
+            lval* x = lval_eval(e, lval_pop(expr, 0));
+            if(x->type == LVAL_ERR) {lval_println(x);}
+            lval_del(x);
+        }
+
+        lval_del(expr);
+        lval_del(a);
+
+        return lval_sexpr();
+    }else{
+        char* err_msg = mpc_err_string(parsed.error);
+        mpc_err_delete(parsed.error);
+
+        lval* err = lval_err("Library %s on fire.", err_msg);
+        free(err_msg);
+        lval_del(a);
+
+        return err;
+    }
+}
+
+lval* builtin_print(lenv* e, lval* a){
+
+    for(int i = 0; i < a->count; i++){
+        lval_print(a->cell[i]); putchar(' ');
+    }
+
+    putchar('\n');
+    lval_del(a);
+
+    return lval_sexpr();
+}
+
+lval* builtin_error(lenv* e, lval* a){
+    LASSERT_NUM("error", a, 1);
+    LASSERT_TYPE("error", a, 0, LVAL_STR);
+
+    lval* err = lval_err(a->cell[0]->str);
+
+    lval_del(a);
+    return err;
 }
 
 lval* builtin_if(lenv* e, lval* a){
@@ -302,5 +355,10 @@ void lenv_add_builtins(lenv* e){
 
     //conditionals
     lenv_add_builtin(e, "if", builtin_if);
+
+    //utils
+    lenv_add_builtin(e, "load", builtin_load);
+    lenv_add_builtin(e, "print", builtin_print);
+    lenv_add_builtin(e, "error", builtin_error);
 
 }
