@@ -1,6 +1,6 @@
 # YAFL  Yet Another Fu...Functional, lets go with Functional Langauge.
 
-My humble implementaion of [Build your Own Lisp](http://www.buildyourownlisp.com/), which doubly peaked my interest as I have been meaning to brush up on my C and I'm a big fan of Lisps.
+My humble implementaion of [Build your Own Lisp](http://www.buildyourownlisp.com/), which doubly piqued my interest as I have been meaning to brush up on my C and I'm a big fan of Lisps.
 
 ## Build insstructions.
 
