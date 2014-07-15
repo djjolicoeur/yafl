@@ -1,16 +1,14 @@
-;; Core library 
+;; Core library
 
 
 ;atoms
-(def {nil} {})
-(def {true} 1)
-(def {false} 0)
+(def [nil] [])
+(def [true] 1)
+(def [false] 0)
 
-(def {defn}
-  (\ {f args}
-    {def (head f) (\ (tail f) args)}))
+(def [defn]
+  (\ [f args]
+    [def (head f) (\ (tail f) args)]))
 
-(defn {first l}
-  {eval (head l)})
-
-  
+(defn [first l]
+  [eval (head l)])

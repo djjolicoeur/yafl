@@ -1,4 +1,5 @@
-#include "mpc/mpc.h"
+#include "deps/mpc/mpc.h"
+#include "deps/uthash/uthash.h"
 
 #define LASSERT(args, cond, fmt, ...)             \
     if(!(cond)) {                                 \
@@ -28,9 +29,12 @@ enum {LVAL_ERR, LVAL_NUM,
 
 struct lval;
 
+struct lenv_table;
+
 struct lenv;
 
 typedef struct lenv lenv;
+typedef struct lenv_table lenv_table;
 typedef struct lval lval;
 
 typedef lval*(*lbuiltin)(lenv*, lval*);
@@ -52,11 +56,19 @@ struct lval{
     lval** cell;
 };
 
+struct lenv_table{
+    char* sym;
+    lval* val;
+    UT_hash_handle hh;
+};
+
 struct lenv{
     lenv* par;
     int count;
-    char** syms;
-    lval **vals;
+    lenv_table* syms;
+    UT_hash_handle* hh;
+    //char** syms;
+    //lval **vals;
 };
 
 

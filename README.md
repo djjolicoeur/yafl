@@ -8,6 +8,11 @@ I believe I have a little work to do to get this running across all platforms, b
 a mac you can build the project with the included makefile by running `make`. This should
 drop the executable in the bin dir, and can be run with `./bin/yafl`.  Run with no args, this will start the yafl REPL.  Run with a file, or files, as command line arg(s), it will exexecute the contents.
 
+UPDATE -- I have added a dependecy on [clib](https://github.com/clibs/clib) for pulling in
+uthash. you can add uthash by running `clib install troydhanson/uthash`
+
+Also, you will need to instal the [MPC parsing](https://github.com/orangeduck/mpc) library manually as I have removed the source from the repo.  The make file expects it in /src/deps.
+
 ## Examples
 
 At the moment, only String and longs are supported. here is some example usage from the repl.
@@ -29,20 +34,20 @@ yafl> true
 yafl> false
 0
 yafl> nil
-{}
+[]
 yafl> (< 2 1)
 0
-yafl> (head {1 2 3})
+yafl> (head [1 2 3])
 {1}
-yafl> (eval (head {1 2 3}))
+yafl> (eval (head [1 2 3]))
 1
-yafl> (def {l} {1 2 3})
+yafl> (def [l] [1 2 3])
 ()
 yafl> l
-{1 2 3}
+[1 2 3]
 yafl> (first l)
 1
-yafl> (defn {plus x y} {+ x y})
+yafl> (defn [plus x y] [+ x y])
 ()
 yafl> (plus 3 4)
 7
@@ -50,7 +55,7 @@ yafl> (def {a} 1)
 ()
 yafl> a
 1
-yafl> (def {boring-func} (\ {in} {print "This is all I do" in}))
+yafl> (def [boring-func] (\ [in] [print "This is all I do" in]))
 ()
 yafl> (boring-func "for now")
 "This is all I do" "for now"
