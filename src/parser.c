@@ -30,7 +30,7 @@ void gen_parsers(){
            string   : /\"(\\\\.|[^\"])*\"/ ;                      \
            comment  : /;[^\\r\\n]*/ ;                             \
            sexpr    : '(' <expr>* ')' ;                           \
-           qexpr    : '{' <expr>* '}' ;                           \
+           qexpr    : '[' <expr>* ']' ;                           \
            expr     : <number> | <symbol> | <string> | <comment>  \
                     |  <sexpr> | <qexpr> ;                        \
            yafl    : /^/ <expr>* /$/ ;                            \

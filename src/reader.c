@@ -39,8 +39,8 @@ lval* lval_read(mpc_ast_t* t){
     for(int i = 0; i < t->children_num; i++){
         if(strcmp(t->children[i]->contents, "(") == 0) {continue;}
         if(strcmp(t->children[i]->contents, ")") == 0) {continue;}
-        if(strcmp(t->children[i]->contents, "{") == 0) {continue;}
-        if(strcmp(t->children[i]->contents, "}") == 0) {continue;}
+        if(strcmp(t->children[i]->contents, "[") == 0) {continue;}
+        if(strcmp(t->children[i]->contents, "]") == 0) {continue;}
         if(strcmp(t->children[i]->tag, "regex") == 0) {continue;}
         if(strstr(t->children[i]->tag, "comment")) {continue;}
         x = lval_add(x, lval_read(t->children[i]));
@@ -92,7 +92,7 @@ void lval_print(lval* v){
     case LVAL_STR:   lval_print_str(v);            break;
     case LVAL_SYM:   printf("%s", v->sym);         break;
     case LVAL_SEXPR: lval_expr_print(v, '(', ')'); break;
-    case LVAL_QEXPR: lval_expr_print(v, '{', '}'); break;
+    case LVAL_QEXPR: lval_expr_print(v, '[', ']'); break;
     }
 }
 
